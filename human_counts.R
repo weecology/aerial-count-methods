@@ -2,11 +2,12 @@
 
 data_path <- "count_comparisons.csv"
 
-data_raw <- read_csv(data_path, col_names = TRUE) %>%
+data_raw <- read.csv(data_path) %>%
   dplyr::rename_with(tolower) %>%
   tidyr::pivot_longer(cols = !c(date,colony,image_type,counter,behavior), 
                       names_to = "species",
-                      values_to = "count")
+                      values_to = "count") %>%
+  mutate(date = as.Date(date, format = "%m/%d/%Y"))
 
 drone_counts <- data_raw %>%
   dplyr::group_by(date,colony,image_type,counter,species,behavior) %>%
@@ -40,25 +41,38 @@ total_counts <- merge(drone_counts,airplane_counts)
 
 all_airplane <- merge(drone_counts,dplyr::select(airplane_counts,-counter))
 
-plot(total_counts$drone_count,total_counts$airplane_count, xlim = c(0,5000), ylim = c(0,5000))
-abline(a = 0, b=1, col="red")          
+counter_comparison <- data_raw %>%
+  dplyr::group_by(date,colony,image_type,counter,species,behavior) %>%
+  dplyr::summarise(count = mean(count)) %>%
+  dplyr::group_by(date,colony,image_type,counter,species) %>%
+  dplyr::summarise(count = sum(count)) 
+
 
 library(ggplot2)
 ggplot(total_counts, aes(drone_count, airplane_count, col=species)) +
-  geom_point() +
+  geom_point(cex=2) +
   geom_abline(slope=1, intercept = 0, col = "red") +
-  facet_wrap(vars(species))
+  facet_wrap(vars(species), scales = "free") +
+  theme_minimal(base_size=12)
+
+ggplot(total_counts, aes(drone_count, airplane_count, col=colony)) +
+  geom_point(cex=2) +
+  geom_abline(slope=1, intercept = 0, col = "red") +
+  facet_wrap(vars(species), scales = "free") +
+  theme_minimal(base_size=12)
 
 ggplot(total_counts, aes(drone_count, airplane_count, col=species)) +
-  geom_point() +
+  geom_point(cex=2) +
   geom_abline(slope=1, intercept = 0, col = "red") +
-  facet_wrap(vars(counter), nrow = 2, scales = "free")
+  facet_wrap(vars(counter), nrow = 2, scales = "free") +
+  theme_minimal(base_size=12)
 
 dplyr::filter(all_airplane,counter=="LG") %>%
 ggplot(aes(drone_count, airplane_count, col=species)) +
-  geom_point() +
+  geom_point(cex=2) +
   geom_abline(slope=1, intercept = 0, col = "red") +
-  facet_wrap(vars(order), nrow = 2, scales = "free")
+  facet_wrap(vars(order), nrow = 2, scales = "free") +
+  theme_minimal(base_size=12)
 
 
 ## Drone double counts
@@ -74,4 +88,10 @@ lg_double <- data_raw %>%
   ylim(0,300) +
   geom_point() +
   geom_abline(slope=1, intercept = 0, col = "red")
+  
+## Violin plots
+  total_counts %>% mutate(error = drone_count-airplane_count) %>%
+  ggplot(aes(counter, error)) +
+  geom_violin() +
+  theme_minimal(base_size=12)
   
