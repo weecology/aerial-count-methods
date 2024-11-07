@@ -4,6 +4,9 @@ data_path <- "count_comparisons.csv"
 
 data_raw <- read.csv(data_path) %>%
   dplyr::rename_with(tolower) %>%
+  mutate(colony = gsub(" ", "", colony),
+         whib = whib + sneg + smwh) %>%
+  select(-c(sneg,smwh)) %>%
   tidyr::pivot_longer(cols = !c(date,colony,image_type,counter,behavior), 
                       names_to = "species",
                       values_to = "count") %>%
