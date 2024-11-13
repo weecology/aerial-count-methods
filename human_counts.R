@@ -56,13 +56,15 @@ ggplot(total_counts, aes(drone_count, airplane_count, col=species)) +
   geom_point(cex=2) +
   geom_abline(slope=1, intercept = 0, col = "red") +
   facet_wrap(vars(species), scales = "free") +
-  theme_minimal(base_size=12)
+  theme_minimal(base_size=12) +
+  labs(title="Human Counts -  UAV vs Airplane")
 
 ggplot(total_counts, aes(drone_count, airplane_count, col=colony)) +
   geom_point(cex=2) +
   geom_abline(slope=1, intercept = 0, col = "red") +
   facet_wrap(vars(species), scales = "free") +
-  theme_minimal(base_size=12)
+  theme_minimal(base_size=12) +
+  labs(title="Human Counts -  UAV vs Airplane")
 
 ggplot(total_counts, aes(drone_count, airplane_count, col=species)) +
   geom_point(cex=2) +
@@ -71,8 +73,10 @@ ggplot(total_counts, aes(drone_count, airplane_count, col=species)) +
   theme_minimal(base_size=12)
 
 dplyr::filter(all_airplane,counter=="LG") %>%
-ggplot(aes(drone_count, airplane_count, col=species)) +
+  mutate(airplane_count = airplane_count+1, drone_count = drone_count+1) %>%
+  ggplot(aes(drone_count, airplane_count, col=species)) +
   geom_point(cex=2) +
+  coord_trans(x="log10", y="log10") +
   geom_abline(slope=1, intercept = 0, col = "red") +
   facet_wrap(vars(order), nrow = 2, scales = "free") +
   theme_minimal(base_size=12)
@@ -96,5 +100,6 @@ lg_double <- data_raw %>%
   total_counts %>% mutate(error = drone_count-airplane_count) %>%
   ggplot(aes(counter, error)) +
   geom_violin() +
-  theme_minimal(base_size=12)
+  theme_minimal(base_size=12) +
+    labs(title="Error (Drone-Airplane) by counter")
   

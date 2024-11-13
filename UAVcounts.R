@@ -32,6 +32,7 @@ counted <- read.csv("count_comparisons.csv") %>%
 predicted <- read_sf(dsn = "../Downloads/PredictedBirds", layer = "PredictedBirds") %>%
              rename(species = label, colony = Site, date = Date) %>%
              as.data.frame() %>%
+             filter(score >=0.4) %>%
              select(colony, date, species) %>%
              mutate(date = as.Date(date, format = "%m_%d_%Y"),
                     species = replace(species, species=="Great Blue Heron", "gbhe"),
@@ -113,7 +114,8 @@ ggplot(aes(Drone, Drone_AI, col=colony)) +
   coord_trans(x="log10", y="log10") +
   geom_abline(slope=1, intercept = 0, col = "red") +
   facet_wrap(vars(species), scales = "free") +
-  theme_minimal(base_size=12)
+  theme_minimal(base_size=12) +
+  labs(title="UAV - Human vs MLM")
 
 airplane_compare %>% filter(counter=="LG") %>% mutate(Airplane = Airplane+1, Drone_AI = Drone_AI+1) %>%
 
@@ -122,7 +124,8 @@ ggplot(aes(Airplane, Drone_AI, col=colony)) +
   coord_trans(x="log10", y="log10") +
   geom_abline(slope=1, intercept = 0, col = "red") +
   facet_wrap(vars(species), scales = "free") +
-  theme_minimal(base_size=12)
+  theme_minimal(base_size=12) +
+  labs(title="Airplane+Human vs UAV+MLM")
 
 airplane_compare %>% filter(lag <= 2, lag >= -2, counter=="LG") %>% 
   mutate(Airplane = Airplane+1, Drone_AI = Drone_AI+1) %>%
@@ -132,7 +135,62 @@ ggplot(aes(Airplane, Drone_AI, col=colony)) +
   coord_trans(x="log10", y="log10") +
   geom_abline(slope=1, intercept = 0, col = "red") +
   facet_wrap(vars(species), scales = "free") +
-  theme_minimal(base_size=12)
+  theme_minimal(base_size=12) +
+  labs(title="Airplane+Human vs UAV+MLM, lag<=2")
+
+airplane_compare %>% filter(counter=="LG") %>% 
+  mutate(Airplane = Airplane+1, Drone_AI = Drone_AI+1) %>%
+  
+  ggplot(aes(Airplane, Drone_AI, col=colony)) +
+  geom_point(cex=2) +
+  coord_trans(x="log10", y="log10") +
+  geom_abline(slope=1, intercept = 0, col = "red") +
+  facet_wrap(vars(species), scales = "free") +
+  theme_minimal(base_size=12) +
+  labs(title="Airplane+LG vs UAV+MLM")
+
+airplane_compare %>% mutate(error = abs(Airplane-Drone_AI), lag = abs(lag)) %>% filter(counter=="LG") %>%
+  ggplot(aes(lag, error, col=colony)) +
+  geom_point(cex=2) +
+  facet_wrap(vars(species), scales = "free") +
+  theme_minimal(base_size=12) +
+  labs(title="Lag (days btw images) vs error (abs(Airplane_LG-Drone_AI))")
+
+airplane_compare %>% mutate(error = Drone_AI-Airplane) %>%
+  ggplot(aes(counter, error)) +
+  geom_violin() +
+  theme_minimal(base_size=12) +
+  labs(title="Error (Drone_AI-Airplane) by counter")
+
+just_drone <- all_data %>%
+  ungroup() %>%
+  filter(image_type == "Drone", 
+         !is.na(order)) %>%
+  right_join(flights_counted) %>%
+  tidyr::pivot_wider(names_from = image_type, values_from = count, values_fill = 0)
+
+just_ai <- all_data %>%
+  ungroup() %>%
+  filter(image_type == "Drone_AI", 
+         !is.na(order)) %>%
+  select(-"counter") %>%
+  right_join(flights_counted) %>%
+  tidyr::pivot_wider(names_from = image_type, values_from = count, values_fill = 0)
+
+merge(just_drone,just_ai) %>% mutate(error = Drone_AI-Drone) %>%
+  ggplot(aes(counter, error)) +
+  geom_violin() +
+  theme_minimal(base_size=12) +
+  labs(title="Error (Drone_AI-Drone_Human) by counter")
+
+##No log scale
+drone_compare  %>% 
+  ggplot(aes(Drone, Drone_AI, col=colony)) +
+  geom_point(cex=2) +
+  geom_abline(slope=1, intercept = 0, col = "red") +
+  facet_wrap(vars(species), scales = "free") +
+  theme_minimal(base_size=12) +
+  labs(title="UAV - Human vs MLM")
 
 airplane_compare %>% filter(counter=="LG") %>%
   
@@ -140,15 +198,5 @@ airplane_compare %>% filter(counter=="LG") %>%
   geom_point(cex=2) +
   geom_abline(slope=1, intercept = 0, col = "red") +
   facet_wrap(vars(species), scales = "free") +
-  theme_minimal(base_size=12)
-
-airplane_compare %>% mutate(error = abs(Airplane-Drone_AI), lag = abs(lag)) %>% filter(counter=="LG") %>%
-  ggplot(aes(lag, error, col=colony)) +
-  geom_point(cex=2) +
-  facet_wrap(vars(species), scales = "free") +
-  theme_minimal(base_size=12)
-
-airplane_compare %>% mutate(error = Drone_AI-Airplane) %>%
-  ggplot(aes(counter, error)) +
-  geom_violin() +
-  theme_minimal(base_size=12)
+  theme_minimal(base_size=12) +
+  labs(title="Airplane+Human vs UAV+MLM")
