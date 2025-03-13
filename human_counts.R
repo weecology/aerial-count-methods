@@ -22,7 +22,7 @@ drone_counts <- data_raw %>%
   dplyr::rename(drone_count=count) %>%
   dplyr::mutate(order = dplyr::case_when(
     date %in% c("3/2/22","3/3/22","3/4/22","3/9/22","3/14/22") ~ 1,
-    date %in% c("3/21/22","3/22/22","3/24/22","3/28/22","3/29/22","3/30/22","4/6/22","4/7/22") ~ 2,
+    date %in% c("3/21/22","3/22/22","3/24/22","3/28/22","3/29/22","3/30/22","4/6/22","4/7/22", "4/8/22") ~ 2,
     TRUE ~ 3)) %>%
   dplyr::select(-c(image_type,date)) 
   
